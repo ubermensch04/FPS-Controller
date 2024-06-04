@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://brhu6l2kvmb4g"]
+[gd_scene load_steps=10 format=3 uid="uid://brhu6l2kvmb4g"]
 
 [ext_resource type="Texture2D" uid="uid://dgc4rkxhjynd4" path="res://assets/textures/dev/grids/Dark/texture_07.png" id="1_pwq1y"]
 [ext_resource type="Texture2D" uid="uid://c2r5aajpaharj" path="res://assets/hdris/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="2_tij74"]
@@ -22,12 +22,21 @@ glow_enabled = true
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l3jj8"]
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_n5f6d"]
+height = 1.2
+
 [node name="World" type="Node3D"]
 
 [node name="Stage" type="Node3D" parent="."]
 
 [node name="CSGBox3D" type="CSGBox3D" parent="Stage"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+use_collision = true
+size = Vector3(30, 1, 30)
+material = SubResource("StandardMaterial3D_7jdue")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="Stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 21.332)
 use_collision = true
 size = Vector3(30, 1, 30)
 material = SubResource("StandardMaterial3D_7jdue")
@@ -42,13 +51,20 @@ transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75
 shadow_enabled = true
 
 [node name="Player" type="CharacterBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.01531, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("3_w58ir")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+[node name="StandingCollisionShape" type="CollisionShape3D" parent="Player"]
 shape = SubResource("CapsuleShape3D_l3jj8")
+
+[node name="CrouchingCollisionShape" type="CollisionShape3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.395317, 0)
+shape = SubResource("CapsuleShape3D_n5f6d")
 
 [node name="Head" type="Node3D" parent="Player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Player/Head"]
+
+[node name="RayCast3D" type="RayCast3D" parent="Player"]
+target_position = Vector3(0, 2, 0)
