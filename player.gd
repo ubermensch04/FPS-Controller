@@ -1,10 +1,12 @@
 extends CharacterBody3D
 
 #Player Node
-@onready var head = $Head
+@onready var head = $Neck/Head
 @onready var standing_collision_shape = $StandingCollisionShape
 @onready var crouching_collision_shape = $CrouchingCollisionShape
 @onready var ray_cast_3d = $RayCast3D
+@onready var neck = $Neck
+@onready var camera_3d = $Neck/Head/Camera3D
 
 #Speed Variables
 var current_speed = 5.0
@@ -12,10 +14,19 @@ const walking_speed= 5.0
 const sprinting_speed=8.0
 const crouching_speed=3.0
 
+#States
+var walking=false
+var sprinting=false
+var crouching=false
+var free_looking=false
+var sliding=false
+
+
 #Movement Variables
 const jump_velocity = 4.5
 var crouching_depth = -0.5
 var lerp_speed= 15
+var free_look_tilt=8
 
 #Input Variables
 var direction=Vector3.ZERO
@@ -27,8 +38,13 @@ func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	
 func _input(event):
+	
 	if event is InputEventMouseMotion:
-		rotate_y(-deg_to_rad(event.relative.x*mouse_sens))
+		if free_looking:
+			neck.rotate_y(deg_to_rad(-event.relative.x*mouse_sens))
+			neck.rotation.y=clamp(neck.rotation.y,deg_to_rad(-60),deg_to_rad(60))
+		else:
+			rotate_y(-deg_to_rad(event.relative.x*mouse_sens))
 		head.rotate_x(-deg_to_rad(event.relative.y*mouse_sens))
 		head.rotation.x=clamp(head.rotation.x,deg_to_rad(-89),deg_to_rad(89))
 		
@@ -42,21 +58,37 @@ func _physics_process(delta):
 		crouching_collision_shape.disabled=false
 		
 		current_speed=crouching_speed
-		head.position.y=lerp(head.position.y,1.8+crouching_depth,delta*lerp_speed)
+		head.position.y=lerp(head.position.y,crouching_depth,delta*lerp_speed)
 		
+		walking=false
+		sprinting=false
+		crouching=true
 	#Standing	
 	elif !ray_cast_3d.is_colliding():
 		standing_collision_shape.disabled=false
 		crouching_collision_shape.disabled=true
 		
-		head.position.y=lerp(head.position.y,1.8,delta*lerp_speed)
+		head.position.y=lerp(head.position.y,0.0,delta*lerp_speed)
 		#Sprinting
 		if Input.is_action_pressed("sprint"):
 			current_speed=sprinting_speed
+			walking=false
+			sprinting=true
+			crouching=false
 		#Walking
 		else:
+			walking=true
+			sprinting=false
+			crouching=false
 			current_speed=walking_speed
-		
+	#handling free looking
+	if Input.is_action_pressed("free_look"):
+		free_looking=true
+		camera_3d.rotation.z=neck.rotation.y*-deg_to_rad(free_look_tilt)
+	else:
+		free_looking=false
+		neck.rotation.y=lerp(neck.rotation.y,0.0,delta*lerp_speed)
+		camera_3d.rotation.z=lerp(camera_3d.rotation.z,0.0,delta*lerp_speed)
 	# Add the gravity.
 	if not is_on_floor():
 		velocity.y -= gravity * delta
