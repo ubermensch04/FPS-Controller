@@ -46,6 +46,7 @@ const jump_velocity = 4.5
 var crouching_depth = -0.5
 var lerp_speed= 15
 var free_look_tilt=8
+var air_lerp_speed=3.0
 
 #Input Variables
 var direction=Vector3.ZERO
@@ -77,7 +78,7 @@ func _physics_process(delta):
 		standing_collision_shape.disabled=true
 		crouching_collision_shape.disabled=false
 		
-		current_speed=crouching_speed
+		current_speed=lerp(current_speed, crouching_speed,delta*lerp_speed)
 		head.position.y=lerp(head.position.y,crouching_depth,delta*lerp_speed)
 		
 		#Slide Begin Logic
@@ -99,7 +100,7 @@ func _physics_process(delta):
 		head.position.y=lerp(head.position.y,0.0,delta*lerp_speed)
 		#Sprinting
 		if Input.is_action_pressed("sprint"):
-			current_speed=sprinting_speed
+			current_speed=lerp(current_speed, sprinting_speed,delta*lerp_speed)
 			walking=false
 			sprinting=true
 			crouching=false
@@ -108,7 +109,7 @@ func _physics_process(delta):
 			walking=true
 			sprinting=false
 			crouching=false
-			current_speed=walking_speed
+			current_speed=lerp(current_speed, walking_speed,delta*lerp_speed)
 	#handling free looking
 	if Input.is_action_pressed("free_look") || sliding:
 		free_looking=true
@@ -157,16 +158,19 @@ func _physics_process(delta):
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
 		velocity.y = jump_velocity
 		sliding=false
-	direction = lerp(direction,(transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(),delta*lerp_speed)
+	if is_on_floor():
+		direction = lerp(direction,(transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(),delta*lerp_speed)
+	else:
+		if input_dir!=Vector2.ZERO:
+			direction = lerp(direction,(transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(),delta*air_lerp_speed)
 	if sliding:
 		direction=(transform.basis*Vector3(slide_vector.x,0,slide_vector.y)).normalized()
+		current_speed= (slide_timer+0.1)*slide_speed
+		
 	if direction:
 		velocity.x = direction.x * current_speed
 		velocity.z = direction.z * current_speed
-		
-		if sliding:
-			velocity.x = direction.x * (slide_timer+0.1)*slide_speed
-			velocity.z = direction.z * (slide_timer+0.1)*slide_speed
+			
 	else:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 		velocity.z = move_toward(velocity.z, 0, current_speed)
